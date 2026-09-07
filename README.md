@@ -104,6 +104,37 @@ The `authorizer` shown above is a [function](https://github.com/atomisthq/jibbit
 
 You can reference your own own custom authorizers.  Note that this is running as a [named tool][tools-usage], so the deps of your projects are not loaded in the current runtime.  You can, however, load namespaces from the root of your project (eg from `"."`).
 
+### Push to GHCR (GitHub Container Registry)
+
+```edn
+{:main my-namespace.core
+ :target-image {:image-name "ghcr.io/OWNER/IMAGE"
+                :type :registry
+                :authorizer {:fn jibbit.ghcr/authorizer}}}
+```
+
+The authorizer reads the username from `GITHUB_ACTOR` and the token from `GITHUB_TOKEN` (falling back to `CR_PAT`).
+
+In GitHub Actions, `GITHUB_ACTOR` is set automatically, but you must pass the token explicitly — it is not exported to the shell by default, and the default token is read-only so you also need `packages: write`:
+
+```yaml
+permissions:
+  packages: write
+steps:
+  - name: Build and push
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    run: clojure -T:jibbit build
+```
+
+Locally, export your username and a personal access token with `write:packages`:
+
+```bash
+export GITHUB_ACTOR=your-username
+export CR_PAT=YOUR_TOKEN
+clojure -T:jibbit build
+```
+
 ### Push to ECR
 
 There are a few ways to authenticate to ECR.  If you have a local aws profile then use the `:profile` type shown below.  This will call the same api that would be called by the equivalent `aws ecr get-login-password --region us-west-1 --profile sts`.
