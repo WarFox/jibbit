@@ -113,18 +113,19 @@ You can reference your own own custom authorizers.  Note that this is running as
                 :authorizer {:fn jibbit.ghcr/authorizer}}}
 ```
 
-The authorizer reads the username from `GITHUB_ACTOR` and the token from `GITHUB_TOKEN` (falling back to `CR_PAT`).
+The authorizer reads the username from `GITHUB_ACTOR` and the token from `CR_PAT` (falling back to `GITHUB_TOKEN`). Empty values are treated as unset.
 
 In GitHub Actions, `GITHUB_ACTOR` is set automatically, but you must pass the token explicitly — it is not exported to the shell by default, and the default token is read-only so you also need `packages: write`:
 
 ```yaml
 permissions:
+  contents: read
   packages: write
 steps:
   - name: Build and push
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    run: clojure -T:jibbit build
+    run: clojure -Tjib build
 ```
 
 Locally, export your username and a personal access token with `write:packages`:
@@ -132,7 +133,7 @@ Locally, export your username and a personal access token with `write:packages`:
 ```bash
 export GITHUB_ACTOR=your-username
 export CR_PAT=YOUR_TOKEN
-clojure -T:jibbit build
+clojure -Tjib build
 ```
 
 ### Push to ECR
