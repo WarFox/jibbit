@@ -1,13 +1,16 @@
-(ns jibbit.ghcr)
+(ns jibbit.ghcr
+  (:require [clojure.string :as str]))
 
 ;; GHCR auth is HTTP Basic username:token. There's no CLI/SDK to shell out to,
 ;; so we read GitHub's documented env vars: GITHUB_ACTOR (username) and
-;; GITHUB_TOKEN, falling back to CR_PAT for the local personal-access-token case.
+;; CR_PAT (personal access token), falling back to GITHUB_TOKEN for Actions.
+;; Blank values count as unset, e.g. an empty ${{ secrets.MISSING }}.
 (defn creds [getenv]
-  (let [username (getenv "GITHUB_ACTOR")
-        token    (or (getenv "GITHUB_TOKEN") (getenv "CR_PAT"))]
+  (let [env      #(let [v (getenv %)] (when-not (str/blank? v) v))
+        username (env "GITHUB_ACTOR")
+        token    (or (env "CR_PAT") (env "GITHUB_TOKEN"))]
     (when-not (and username token)
-      (throw (ex-info "GHCR authorizer needs GITHUB_ACTOR and GITHUB_TOKEN (or CR_PAT)" {})))
+      (throw (ex-info "GHCR authorizer needs non-blank GITHUB_ACTOR and CR_PAT or GITHUB_TOKEN" {})))
     {:username username
      :password token}))
 
